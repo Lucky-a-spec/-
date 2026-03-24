@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>OKX 交易日历奖励</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d0d1a;
+    color: #e0e0e0;
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #333;
+  }
+  .header h1 { font-size: 22px; color: #ffd700; letter-spacing: 1px; }
+  .header p { font-size: 13px; color: #888; margin-top: 4px; }
+  .admin-badge {
+    display: inline-block;
+    background: #ff4d4f;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .name-section { padding: 20px; text-align: center; }
+  .name-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #1a1a2e;
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+  .name-box label { font-size: 14px; color: #aaa; white-space: nowrap; }
+  .name-box input {
+    background: #111;
+    border: 1px solid #555;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    padding: 8px 12px;
+    width: 160px;
+    outline: none;
+  }
+  .name-box input:focus { border-color: #ffd700; }
+  .name-box button {
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 18px;
+    cursor: pointer;
+  }
+  .name-box button:hover { opacity: 0.9; }
+  .user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a2a1a;
+    border: 1px solid #2a4a2a;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: #52c41a;
+    margin-top: 10px;
+  }
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 20px;
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    background: #1a1a2e;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 10px 20px;
+    text-align: center;
+    min-width: 100px;
+  }
+  .stat-num { font-size: 22px; font-weight: bold; color: #ffd700; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+  .calendar-wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 12px 20px;
+  }
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 4px;
+  }
+  .cal-title { font-size: 17px; font-weight: bold; color: #fff; }
+  .cal-nav button {
+    background: #333;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 16px;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  .cal-nav button:hover { background: #444; }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-dow {
+    text-align: center;
+    font-size: 11px;
+    color: #666;
+    padding: 4px 0;
+  }
+  .day-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: transform 0.1s;
+    min-height: 44px;
+  }
+  .day-cell:active { transform: scale(0.95); }
+  .day-cell.empty { cursor: default; }
+  .day-cell.past { background: #1a1a1a; color: #444; cursor: not-allowed; }
+  .day-cell.future { background: #1a1a2e; border: 1px solid #2a2a3e; color: #888; cursor: not-allowed; }
+  .day-cell.active { background: linear-gradient(135deg, #1e3a1e, #142a14); border: 1px solid #2a4a2a; color: #e0e0e0; }
+  .day-cell.active:hover { border-color: #52c41a; }
+  .day-cell.unlocked { background: linear-gradient(135deg, #0a2a1a, #0d1f0d); border: 1px solid #52c41a; }
+  .day-cell .day-num { font-size: 11px; color: #aaa; }
+  .day-cell.active .day-num { color: #ccc; }
+  .day-cell.unlocked .day-num { font-size: 10px; color: #52c41a; }
+  .day-cell .gift-icon { font-size: 22px; margin-top: 2px; }
+  .prize-mini { font-size: 9px; color: #52c41a; text-align: center; line-height: 1.2; margin-top: 2px; }
+  .how-to { max-width: 600px; margin: 0 auto 12px; padding: 0 12px; }
+  .how-to-box {
+    background: #111827;
+    border: 1px solid #2a3a5a;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #aaa;
+  }
+  .how-to-box strong { color: #ffd700; }
+  .unlocked-list { max-width: 600px; margin: 0 auto; padding: 0 12px 40px; }
+  .unlocked-title { font-size: 14px; color: #aaa; margin-bottom: 8px; }
+  .unlocked-item {
+    display: flex;
+    justify-content: space-between;
+    background: #111;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  .unlocked-item .date-tag { color: #888; }
+  .unlocked-item .prize-tag { color: #52c41a; font-weight: bold; }
+  .admin-panel { max-width: 600px; margin: 0 auto 20px; padding: 0 12px; display: none; }
+  .admin-panel.show { display: block; }
+  .admin-box { background: #1a0a0a; border: 1px solid #ff4d4f; border-radius: 12px; padding: 16px; }
+  .admin-box h3 { color: #ff4d4f; font-size: 14px; margin-bottom: 12px; }
+  .admin-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .admin-row label { font-size: 12px; color: #aaa; width: 52px; flex-shrink: 0; }
+  .admin-row input {
+    background: #111;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    padding: 6px 10px;
+    flex: 1;
+    min-width: 100px;
+    outline: none;
+  }
+  .admin-query-btn {
+    background: #ff4d4f;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 18px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .admin-result { display: none; margin-top: 12px; background: #0a0a0a; border-radius: 8px; padding: 14px; text-align: center; }
+  .admin-code { font-size: 36px; color: #ff4d4f; font-weight: bold; letter-spacing: 8px; }
+  .admin-prize { font-size: 14px; color: #aaa; margin-top: 6px; }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #1a1a2e;
+    border: 1px solid #444;
+    border-radius: 16px;
+    padding: 28px 24px;
+    width: min(340px, 90vw);
+    text-align: center;
+  }
+  .modal-title { font-size: 18px; font-weight: bold; color: #ffd700; margin-bottom: 6px; }
+  .modal-date { font-size: 14px; color: #52c41a; margin-bottom: 4px; }
+  .modal-hint { font-size: 12px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+  .code-input-wrap { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+  .code-digit {
+    width: 52px;
+    height: 60px;
+    background: #111;
+    border: 2px solid #555;
+    border-radius: 10px;
+    color: #ffd700;
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    outline: none;
+    caret-color: #ffd700;
+  }
+  .code-digit:focus { border-color: #ffd700; }
+  .modal-confirm-btn {
+    background: linear-gradient(135deg, #52c41a, #389e0d);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 30px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .modal-cancel-btn {
+    background: #333;
+    border: none;
+    border-radius: 10px;
+    color: #aaa;
+    font-size: 14px;
+    padding: 10px 30px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .modal-error { font-size: 13px; color: #ff4d4f; margin-top: -10px; margin-bottom: 10px; min-height: 20px; }
+  .prize-reveal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .prize-reveal-overlay.show { display: flex; }
+  .prize-box {
+    background: linear-gradient(135deg, #1a2a1a, #0d1a0d);
+    border: 2px solid #52c41a;
+    border-radius: 20px;
+    padding: 40px 50px;
+    text-align: center;
+    animation: prizeReveal 0.5s ease;
+    max-width: min(380px, 90vw);
+    width: 100%;
+    position: relative;
+    z-index: 201;
+  }
+  @keyframes prizeReveal {
+    0%   { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+    60%  { transform: scale(1.1) rotate(3deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  .prize-emoji { font-size: 64px; margin-bottom: 12px; display: block; }
+  .prize-date-label { font-size: 13px; color: #888; margin-bottom: 6px; }
+  .prize-name { font-size: 28px; font-weight: bold; color: #52c41a; margin-bottom: 6px; }
+  .prize-subtitle { font-size: 14px; color: #aaa; margin-bottom: 20px; }
+  .prize-hongbao-tip {
+    display: none;
+    background: #2a1a0a;
+    border: 1px solid #ff8c00;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 8px 0 16px;
+    font-size: 13px;
+    color: #ffa940;
+    line-height: 1.7;
+  }
+  .prize-confirm {
+    background: linear-gradient(135deg, #52c41a, #389e0d);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 14px 40px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .confetti-wrap { position: fixed; inset: 0; pointer-events: none; z-index: 200; overflow: hidden; }
+  .confetti-piece {
+    position: absolute;
+    top: -10px;
+    border-radius: 2px;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #333;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎯 OKX 交易日历奖励<span id="adminBadge" class="admin-badge" style="display:none;">管理员模式</span></h1>
+  <p>每天交易 · 每天开奖 · 每人专属</p>
+</div>
+
+<div class="name-section" id="nameSection">
+  <div class="name-box">
+    <label>我的昵称</label>
+    <input id="nameInput" type="text" placeholder="输入群昵称" maxlength="20" onkeydown="if(event.key==='Enter')confirmName()">
+    <button onclick="confirmName()">确认</button>
+  </div>
+  <div id="userBadge" class="user-badge" style="display:none;">
+    <span>✅ 已确认：</span>
+    <span id="badgeName" style="font-weight:bold;color:#ffd700;"></span>
+    <span onclick="changeName()" style="cursor:pointer;color:#555;font-size:11px;">更改</span>
+  </div>
+</div>
+
+<div class="stats-bar" id="statsBar" style="display:none;">
+  <div class="stat-item">
+    <div class="stat-num" id="statUnlocked">0</div>
+    <div class="stat-label">已开奖天数</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="statDays">0</div>
+    <div class="stat-label">可开奖天数</div>
+  </div>
+</div>
+
+<div class="how-to" id="howTo" style="display:none;">
+  <div class="how-to-box">
+    🔑 <strong>如何获得解锁码？</strong><br>
+    发当天交易截图到群里 → 管理员核实后发给你<strong>4位解锁码</strong> → 点击对应日期输入解锁 → 奖励自动揭晓
+  </div>
+</div>
+
+<div class="calendar-wrap" id="calendarWrap" style="display:none;">
+  <div class="cal-header">
+    <div class="cal-nav"><button onclick="prevMonth()">‹</button></div>
+    <div class="cal-title" id="calTitle"></div>
+    <div class="cal-nav"><button onclick="nextMonth()">›</button></div>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+</div>
+
+<div class="unlocked-list" id="unlockedList" style="display:none;">
+  <div class="unlocked-title">📋 我的开奖记录</div>
+  <div id="unlockedItems"></div>
+</div>
+
+<div class="admin-panel" id="adminPanel">
+  <div class="admin-box">
+    <h3>🔑 管理员查询面板</h3>
+    <div class="admin-row">
+      <label>用户昵称</label>
+      <input id="adminUser" type="text" placeholder="输入用户群昵称">
+    </div>
+    <div class="admin-row">
+      <label>查询日期</label>
+      <input id="adminDate" type="date">
+    </div>
+    <button class="admin-query-btn" onclick="adminQuery()">查询解锁码 + 奖励预览</button>
+    <div class="admin-result" id="adminResult">
+      <div style="font-size:12px;color:#666;margin-bottom:4px;">
+        用户 <strong id="resUser" style="color:#ffd700;"></strong> · <span id="resDate"></span>
+      </div>
+      <div class="admin-code" id="resCode"></div>
+      <div class="admin-prize" id="resPrize"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="unlockModal">
+  <div class="modal-box">
+    <div class="modal-title">🔐 输入解锁码</div>
+    <div class="modal-date" id="modalDate"></div>
+    <div class="modal-hint">发当天交易截图给管理员<br>收到4位解锁码后在这里输入</div>
+    <div class="code-input-wrap">
+      <input class="code-digit" id="d0" maxlength="1" inputmode="numeric" oninput="digitInput(0)" onkeydown="digitKey(event,0)">
+      <input class="code-digit" id="d1" maxlength="1" inputmode="numeric" oninput="digitInput(1)" onkeydown="digitKey(event,1)">
+      <input class="code-digit" id="d2" maxlength="1" inputmode="numeric" oninput="digitInput(2)" onkeydown="digitKey(event,2)">
+      <input class="code-digit" id="d3" maxlength="1" inputmode="numeric" oninput="digitInput(3)" onkeydown="digitKey(event,3)">
+    </div>
+    <div class="modal-error" id="modalError"></div>
+    <button class="modal-confirm-btn" onclick="confirmUnlock()">确认解锁 🔓</button>
+    <button class="modal-cancel-btn" onclick="closeModal()">取消</button>
+  </div>
+</div>
+
+<div class="prize-reveal-overlay" id="prizeReveal">
+  <div class="confetti-wrap" id="confettiWrap"></div>
+  <div class="prize-box">
+    <span class="prize-emoji" id="revealEmoji">🎁</span>
+    <div class="prize-date-label" id="revealDate"></div>
+    <div class="prize-name" id="revealName"></div>
+    <div class="prize-subtitle" id="revealSub">恭喜获得！截图发到群里领取</div>
+    <div class="prize-hongbao-tip" id="revealHongbaoTip">
+      🎉 恭喜中得隐藏大奖！<br>
+      请截图此页面，然后 <strong style="color:#ffd700;">私信群主</strong> 领取红包 🧧
+    </div>
+    <button class="prize-confirm" onclick="closePrizeReveal()">好的，截图发群里 🎉</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SALT = 'OKX_REWARD_2026';
+const ACTIVITY_START = '2026-03-17';
+
+const PRIZES = [
+  { name: '返佣卡 3张',  emoji: '🃏', weight: 15, type: 'rebate' },
+  { name: '返佣卡 4张',  emoji: '🃏', weight: 13, type: 'rebate' },
+  { name: '体验金 8.8U', emoji: '🎁', weight: 13, type: 'trial'  },
+  { name: '返佣卡 5张',  emoji: '🃏', weight: 12, type: 'rebate' },
+  { name: '体验金 10U',  emoji: '🎁', weight: 12, type: 'trial'  },
+  { name: 'USDT 5U',    emoji: '💰', weight: 8,  type: 'usdt'   },
+  { name: '体验金 15U',  emoji: '🎁', weight: 2,  type: 'trial'  },
+  { name: '体验金 5U',   emoji: '🎁', weight: 2,  type: 'trial'  },
+  { name: '返佣卡 2张',  emoji: '🃏', weight: 4,  type: 'rebate' },
+  { name: '体验金 4U',   emoji: '🎁', weight: 3,  type: 'trial'  },
+  { name: 'USDT 2U',    emoji: '💰', weight: 3,  type: 'usdt'   },
+  { name: '体验金 2U',   emoji: '🎁', weight: 3,  type: 'trial'  },
+  { name: '返佣卡 1张',  emoji: '🃏', weight: 3,  type: 'rebate' },
+  { name: 'USDT 1U',    emoji: '💰', weight: 3,  type: 'usdt'   },
+  { name: 'USDT 0.5U',  emoji: '💰', weight: 2,  type: 'usdt'   },
+  { name: 'USDT 0.2U',  emoji: '💰', weight: 1,  type: 'usdt'   },
+  { name: '🧧 红包大奖', emoji: '🧧', weight: 1,  type: 'hongbao', special: true },
+];
+
+function hashStr(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h;
+}
+
+function getPrize(username, year, month, day) {
+  const hash = hashStr(`${username}_${year}_${month}_${day}`);
+  const total = PRIZES.reduce((s, p) => s + p.weight, 0);
+  const roll = hash % total;
+  let cum = 0;
+  for (const p of PRIZES) { cum += p.weight; if (roll < cum) return p; }
+  return PRIZES[0];
+}
+
+function getUnlockCode(username, year, month, day) {
+  return (hashStr(`${username}_${year}_${month}_${day}_${SALT}`) % 10000).toString().padStart(4, '0');
+}
+
+function getStorageKey(u) { return `okx_cal_${u.toLowerCase().trim()}`; }
+function loadUnlocked(u) { try { return JSON.parse(localStorage.getItem(getStorageKey(u)) || '{}'); } catch { return {}; } }
+function saveUnlocked(u, d) { try { localStorage.setItem(getStorageKey(u), JSON.stringify(d)); } catch {} }
+
+let currentUser = '', currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth() + 1;
+let pendingDate = null, unlocked = {};
+const isAdmin = new URLSearchParams(location.search).has('admin');
+
+window.onload = function () {
+  if (isAdmin) {
+    document.getElementById('adminBadge').style.display = 'inline-block';
+    document.getElementById('adminPanel').classList.add('show');
+    const t = new Date();
+    document.getElementById('adminDate').value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  }
+};
+
+function confirmName() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { showToast('请输入你的群昵称'); return; }
+  currentUser = name;
+  unlocked = loadUnlocked(name);
+  document.getElementById('badgeName').textContent = name;
+  document.getElementById('userBadge').style.display = 'inline-flex';
+  document.getElementById('statsBar').style.display = 'flex';
+  document.getElementById('howTo').style.display = 'block';
+  document.getElementById('calendarWrap').style.display = 'block';
+  document.getElementById('unlockedList').style.display = 'block';
+  renderCalendar(); renderStats(); renderUnlockedList();
+}
+
+function changeName() {
+  document.getElementById('nameInput').value = currentUser;
+  ['userBadge','statsBar','howTo','calendarWrap','unlockedList'].forEach(id => document.getElementById(id).style.display = 'none');
+  currentUser = '';
+}
+
+function renderCalendar() {
+  document.getElementById('calTitle').textContent = `${currentYear}年 ${String(currentMonth).padStart(2,'0')}月`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['日','一','二','三','四','五','六'].forEach(d => {
+    const el = document.createElement('div'); el.className = 'cal-dow'; el.textContent = d; grid.appendChild(el);
+  });
+  const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+  const today = new Date();
+  const actStart = new Date(ACTIVITY_START);
+  for (let i = 0; i < firstDay; i++) { const el = document.createElement('div'); el.className = 'day-cell empty'; grid.appendChild(el); }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement('div');
+    const cellDate = new Date(currentYear, currentMonth - 1, d);
+    const dateKey = `${currentYear}_${currentMonth}_${d}`;
+    const isFuture = cellDate > today;
+    const beforeActivity = cellDate < actStart;
+    if (unlocked[dateKey]) {
+      const prize = getPrize(currentUser, currentYear, currentMonth, d);
+      cell.className = 'day-cell unlocked';
+      cell.innerHTML = `<span class="day-num">${d}日</span><span class="prize-mini">${prize.emoji}<br>${prize.name.split(' ')[0]}</span>`;
+      cell.onclick = () => showToast('已开奖：' + prize.name);
+    } else if (beforeActivity) {
+      cell.className = 'day-cell past';
+      cell.innerHTML = `<span class="day-num">${d}</span>`;
+    } else if (isFuture) {
+      cell.className = 'day-cell future';
+      cell.innerHTML = `<span class="day-num">${d}</span><span style="font-size:18px;">🎁</span>`;
+    } else {
+      cell.className = 'day-cell active';
+      cell.innerHTML = `<span class="day-num">${d}日</span><span class="gift-icon">🎁</span>`;
+      cell.onclick = () => openUnlockModal(currentYear, currentMonth, d);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function prevMonth() { currentMonth--; if (currentMonth < 1) { currentMonth = 12; currentYear--; } renderCalendar(); }
+function nextMonth() { currentMonth++; if (currentMonth > 12) { currentMonth = 1; currentYear++; } renderCalendar(); }
+
+function renderStats() {
+  document.getElementById('statUnlocked').textContent = Object.keys(unlocked).length;
+  const today = new Date(), actStart = new Date(ACTIVITY_START);
+  const start = actStart > new Date(today.getFullYear(), today.getMonth(), 1) ? actStart : new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('statDays').textContent = Math.max(0, Math.floor((today - start) / 86400000) + 1);
+}
+
+function openUnlockModal(year, month, day) {
+  if (!currentUser) return;
+  pendingDate = { year, month, day };
+  document.getElementById('modalDate').textContent = `${year}年${month}月${day}日`;
+  document.getElementById('modalError').textContent = '';
+  ['d0','d1','d2','d3'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('unlockModal').classList.add('show');
+  setTimeout(() => document.getElementById('d0').focus(), 100);
+}
+
+function closeModal() { document.getElementById('unlockModal').classList.remove('show'); pendingDate = null; }
+
+function digitInput(idx) {
+  const el = document.getElementById('d' + idx);
+  const v = el.value.replace(/\D/g, '');
+  el.value = v ? v[0] : '';
+  if (v && idx < 3) document.getElementById('d' + (idx+1)).focus();
+}
+
+function digitKey(e, idx) {
+  if (e.key === 'Backspace' && !document.getElementById('d'+idx).value && idx > 0) document.getElementById('d'+(idx-1)).focus();
+  if (e.key === 'Enter') confirmUnlock();
+}
+
+function confirmUnlock() {
+  const code = ['d0','d1','d2','d3'].map(id => document.getElementById(id).value).join('');
+  if (code.length < 4) { document.getElementById('modalError').textContent = '请输入完整的4位解锁码'; return; }
+  const { year, month, day } = pendingDate;
+  if (code !== getUnlockCode(currentUser, year, month, day)) {
+    document.getElementById('modalError').textContent = '解锁码错误，请核对后重新输入';
+    ['d0','d1','d2','d3'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('d0').focus();
+    return;
+  }
+  const dateKey = `${year}_${month}_${day}`;
+  unlocked[dateKey] = true;
+  saveUnlocked(currentUser, unlocked);
+  closeModal(); renderCalendar(); renderStats(); renderUnlockedList();
+  showPrizeReveal(getPrize(currentUser, year, month, day), `${year}年${month}月${day}日`);
+}
+
+function showPrizeReveal(prize, dateStr) {
+  document.getElementById('revealEmoji').textContent = prize.emoji;
+  document.getElementById('revealDate').textContent = dateStr + ' 开奖';
+  document.getElementById('revealName').textContent = prize.name;
+  const tip = document.getElementById('revealHongbaoTip'), sub = document.getElementById('revealSub');
+  if (prize.special) { tip.style.display = 'block'; sub.style.display = 'none'; }
+  else { tip.style.display = 'none'; sub.style.display = 'block'; }
+  document.getElementById('prizeReveal').classList.add('show');
+  launchConfetti();
+}
+
+function closePrizeReveal() { document.getElementById('prizeReveal').classList.remove('show'); document.getElementById('confettiWrap').innerHTML = ''; }
+
+function launchConfetti() {
+  const colors = ['#ffd700','#52c41a','#1890ff','#ff4d4f','#faad14','#722ed1'];
+  const wrap = document.getElementById('confettiWrap');
+  wrap.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `left:${Math.random()*100}vw;background:${colors[Math.floor(Math.random()*colors.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.5}s;`;
+    wrap.appendChild(p);
+  }
+}
+
+function renderUnlockedList() {
+  const container = document.getElementById('unlockedItems');
+  const keys = Object.keys(unlocked).sort();
+  if (!keys.length) { container.innerHTML = '<div style="font-size:13px;color:#555;text-align:center;padding:16px;">暂无开奖记录，快去晒单解锁吧~</div>'; return; }
+  container.innerHTML = keys.map(k => {
+    const [y, m, d] = k.split('_').map(Number);
+    const prize = getPrize(currentUser, y, m, d);
+    return `<div class="unlocked-item"><span class="date-tag">${y}年${m}月${d}日</span><span class="prize-tag">${prize.emoji} ${prize.name}</span></div>`;
+  }).join('');
+}
+
+function adminQuery() {
+  const user = document.getElementById('adminUser').value.trim();
+  const dateStr = document.getElementById('adminDate').value;
+  if (!user || !dateStr) { alert('请填写用户昵称和日期'); return; }
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const code = getUnlockCode(user, year, month, day);
+  const prize = getPrize(user, year, month, day);
+  document.getElementById('resUser').textContent = user;
+  document.getElementById('resDate').textContent = `${year}年${month}月${day}日`;
+  document.getElementById('resCode').textContent = code;
+  document.getElementById('resPrize').textContent = `该日奖励：${prize.emoji} ${prize.name}`;
+  document.getElementById('adminResult').style.display = 'block';
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>
