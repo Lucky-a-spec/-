@@ -382,7 +382,7 @@
     font-size: 13px;
     border-left: 3px solid #52c41a;
   }
-  .unlocked-item .date-tag { color: #888; }
+  .unlocked-item .date-tag { color: #bbb; }
   .unlocked-item .prize-tag { color: #52c41a; font-weight: bold; }
 
   /* ===== 管理员面板 ===== */
@@ -480,18 +480,25 @@
 <div class="admin-panel" id="adminPanel">
   <h3>🔐 管理员工具 · 生成解锁码</h3>
   <div class="admin-row">
-    <input type="text" id="adminUser" placeholder="用户UID（纯数字）">
-    <select id="adminMonth">
-      <option value="3">3月</option><option value="4">4月</option>
-      <option value="5">5月</option><option value="6">6月</option>
-    </select>
-    <input type="number" id="adminDay" placeholder="日期" min="1" max="31">
-    <button onclick="generateCode()">生成解锁码</button>
+    <input type="text" id="adminUser" placeholder="用户UID（纯数字）" style="flex:2;">
+    <input type="date" id="adminDate" style="flex:2;">
+    <button onclick="generateCode()">查询解锁码 + 奖励预览</button>
   </div>
   <div class="admin-result" id="adminResult" style="display:none;">
     <div>用户 <strong id="resUser" style="color:#ffd700;"></strong> · <span id="resDate"></span></div>
     <div class="admin-code" id="resCode"></div>
     <div class="admin-prize" id="resPrize"></div>
+  </div>
+
+  <!-- 用户开奖记录总览 -->
+  <div style="margin-top:20px;border-top:1px solid #2a1a1a;padding-top:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="color:#ff9500;font-size:14px;font-weight:bold;">🗂️ 用户开奖记录（本设备）</span>
+      <button onclick="renderAllUsersRecords()" style="background:#1a3a5a;border:1px solid #1890ff;border-radius:6px;color:#1890ff;font-size:12px;padding:4px 10px;cursor:pointer;">刷新</button>
+    </div>
+    <div id="allUsersRecords" style="max-height:420px;overflow-y:auto;">
+      <div style="color:#555;font-size:12px;text-align:center;padding:16px;">加载中...</div>
+    </div>
   </div>
 </div>
 
@@ -654,10 +661,11 @@ window.onload = function() {
   const params = new URLSearchParams(location.search);
   if (params.has('admin')) {
     document.getElementById('adminPanel').style.display = 'block';
-    // 预填当月
     const now = new Date();
-    document.getElementById('adminMonth').value = now.getMonth() + 1;
-    document.getElementById('adminDay').value = now.getDate();
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const dd = String(now.getDate()).padStart(2,'0');
+    document.getElementById('adminDate').value = `${now.getFullYear()}-${mm}-${dd}`;
+    setTimeout(renderAllUsersRecords, 100);
   }
   if (params.get('u')) {
     document.getElementById('nameInput').value = params.get('u');
@@ -877,7 +885,7 @@ function renderUnlockedList() {
   const keys = Object.keys(unlocked).sort().reverse();
   const container = document.getElementById('unlockedItems');
   if (keys.length === 0) {
-    container.innerHTML = '<div style="color:#555;font-size:12px;text-align:center;padding:12px;">暂无开奖记录，发交易截图给管理员获取解锁码</div>';
+    container.innerHTML = '<div style="color:#888;font-size:12px;text-align:center;padding:12px;">暂无开奖记录，将交易截图发给管理员获取解锁码 🔗</div>';
     return;
   }
   // Stats header
@@ -901,9 +909,9 @@ function renderUnlockedList() {
     let timeStr = '';
     if (rec && rec.ts) {
       const dt = new Date(rec.ts);
-      timeStr = `<span style="color:#555;font-size:11px;">⏱ ${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</span>`;
+      timeStr = `<span style="color:#888;font-size:11px;">⏱ ${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</span>`;
     }
-    const uidStr = (rec && rec.uid) ? `<span style="color:#555;font-size:11px;">UID: ${rec.uid}</span>` : '';
+    const uidStr = (rec && rec.uid) ? `<span style="color:#888;font-size:11px;">UID: ${rec.uid}</span>` : '';
     return `<div class="unlocked-item" style="flex-direction:column;align-items:flex-start;gap:4px;">
       <div style="display:flex;justify-content:space-between;width:100%;">
         <span class="date-tag">📅 ${y}年${m}月${d}日</span>
@@ -914,19 +922,62 @@ function renderUnlockedList() {
   }).join('');
 }
 
+// ===== 用户开奖记录总览（管理员用）=====
+function renderAllUsersRecords() {
+  const container = document.getElementById('allUsersRecords');
+  if (!container) return;
+  const PREFIX = 'okx_cal_';
+  const uids = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith(PREFIX)) uids.push(k.slice(PREFIX.length));
+  }
+  if (!uids.length) {
+    container.innerHTML = '<div style="color:#666;font-size:12px;text-align:center;padding:20px;">暂无用户开奖记录<br><span style="font-size:11px;color:#444;">用户在该设备解锁后自动显示</span></div>';
+    return;
+  }
+  uids.sort();
+  const cards = uids.map(uid => {
+    const unlocked = loadUnlocked(uid);
+    const keys = Object.keys(unlocked).sort();
+    if (!keys.length) return '';
+    let totalVal = 0;
+    const rows = keys.map(k => {
+      const [y,m,d] = k.split('_').map(Number);
+      const prize = getPrize(uid, y, m, d);
+      totalVal += prize.value || 0;
+      const rec = unlocked[k];
+      let timeStr = '';
+      if (rec && rec.ts) {
+        const dt = new Date(rec.ts);
+        timeStr = `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+      }
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1a2a3a;">
+        <span style="color:#bbb;font-size:12px;">${m}月${d}日</span>
+        <span style="color:#ffd700;font-size:12px;">${prize.emoji} ${prize.name}</span>
+        <span style="color:#666;font-size:11px;">${timeStr}</span>
+      </div>`;
+    }).join('');
+    return `<div style="background:#0d1520;border:1px solid #1a3a5a;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1a3a5a;">
+        <span style="color:#ffd700;font-weight:bold;font-size:13px;">UID: ${uid}</span>
+        <span style="color:#52c41a;font-size:12px;">共 <strong>${keys.length}</strong> 天 · 累计奖励 <strong style="color:#ffd700;">${totalVal.toFixed(1)}U+</strong></span>
+      </div>
+      ${rows}
+    </div>`;
+  }).filter(Boolean).join('');
+  container.innerHTML = cards || '<div style="color:#555;font-size:12px;text-align:center;padding:12px;">暂无记录</div>';
+}
+
 // ===== 管理员工具 =====
 function generateCode() {
   const user = document.getElementById('adminUser').value.trim();
-  const month = parseInt(document.getElementById('adminMonth').value);
-  const day = parseInt(document.getElementById('adminDay').value);
-  const year = new Date().getFullYear();
-
-  if (!user || !day) { alert('请填写用户UID和日期'); return; }
-
+  const dateVal = document.getElementById('adminDate').value;
+  if (!user || !dateVal) { alert('请填写用户UID和查询日期'); return; }
+  const [year, month, day] = dateVal.split('-').map(Number);
   const code = getUnlockCode(user, year, month, day);
   const prize = getPrize(user, year, month, day);
   const dateStr = `${year}年${month}月${day}日`;
-
   document.getElementById('resUser').textContent = user;
   document.getElementById('resDate').textContent = dateStr;
   document.getElementById('resCode').textContent = code;
