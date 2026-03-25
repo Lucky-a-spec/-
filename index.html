@@ -212,34 +212,6 @@
     100% { transform: scale(1); opacity: 1; }
   }
 
-  /* ===== 奖励规则 ===== */
-  .rules-section {
-    max-width: 520px;
-    margin: 0 auto;
-    padding: 0 16px 20px;
-  }
-  .rules-title {
-    font-size: 14px;
-    color: #888;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .rules-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .rule-item {
-    background: #1a1a2e;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 12px;
-  }
-  .rule-days { color: #ffd700; font-weight: bold; font-size: 13px; }
-  .rule-reward { color: #52c41a; margin-top: 2px; }
 
   /* ===== 解锁模态框 ===== */
   .modal-overlay {
@@ -536,27 +508,6 @@
   <div class="days-grid" id="daysGrid"></div>
 </div>
 
-<!-- 奖励规则 -->
-<div class="rules-section" id="rulesSection" style="display:none;">
-  <div class="rules-title">🎁 奖励参考（每日开奖随机）</div>
-  <div class="rules-grid">
-    <div class="rule-item"><div class="rule-days">最高 21.5%</div><div class="rule-reward">🧧 私信群主红包</div></div>
-    <div class="rule-item"><div class="rule-days">高 26.8%</div><div class="rule-reward">💰 USDT 0.1-0.3U</div></div>
-    <div class="rule-item"><div class="rule-days">中高 46.5%</div><div class="rule-reward">🃏 返佣卡1张 / 💰 USDT 0.4-0.6U</div></div>
-    <div class="rule-item"><div class="rule-days">中下 1.2%</div><div class="rule-reward">🎁 体验金 2U</div></div>
-    <div class="rule-item"><div class="rule-days">极低 ~0.1-0.5%</div><div class="rule-reward">💰 USDT 1-2U / 🎁 体验金4U / 🃏 返佣卡2张</div></div>
-  </div>
-    <div class="rule-item"><div class="rule-days">高概率 53.5%</div><div class="rule-reward">💰 USDT 0.1-0.3U</div></div>
-    <div class="rule-item"><div class="rule-days">中高 30.3%</div><div class="rule-reward">🃏 返佣卡 1张 / 💰 USDT 0.4-0.6U</div></div>
-    <div class="rule-item"><div class="rule-days">中下 2.1%</div><div class="rule-reward">🎁 体验金 2U</div></div>
-    <div class="rule-item"><div class="rule-days">极低 ~0.3%</div><div class="rule-reward">💰 USDT 1-2U / 🎁 体验金4U / 🃏 返佣卡2张</div></div>
-  </div>
-    <div class="rule-item"><div class="rule-days">中等 16%</div><div class="rule-reward">🃏 返佣卡 1张</div></div>
-    <div class="rule-item"><div class="rule-days">中高 14.5%</div><div class="rule-reward">💰 USDT 0.4-0.6U</div></div>
-    <div class="rule-item"><div class="rule-days">中下 2.5%</div><div class="rule-reward">🎁 体验金 2U</div></div>
-    <div class="rule-item"><div class="rule-days">极低 ~0.3%</div><div class="rule-reward">💰 USDT 1-2U / 🎁 体验金4U / 🃏 返佣卡2张</div></div>
-  </div>
-</div>
 
 <!-- 已开奖列表 -->
 <div class="unlocked-list" id="unlockedList" style="display:none;">
@@ -601,23 +552,24 @@ const SALT = 'OKX_REWARD_2026';
 const ACTIVITY_START = '2026-03-17'; // 活动开始日期，可调整
 
 const PRIZES = [
-  // ===== 高概率档 ~21.5% =====
-  { name: '🧧 私信群主领取红包', emoji: '🧧', value: 0,   weight: 215, type:'hongbao', special: true },
-  { name: 'USDT 0.1U',          emoji: '💰', value: 0.1, weight: 110, type:'usdt'    },
-  { name: 'USDT 0.2U',          emoji: '💰', value: 0.2, weight: 90,  type:'usdt'    },
-  { name: 'USDT 0.3U',          emoji: '💰', value: 0.3, weight: 68,  type:'usdt'    },
-  // ===== 中高档 ~37.5% =====
-  { name: '返佣卡 1张',          emoji: '🃏', value: 1,   weight: 375, type:'rebate'  },
-  { name: 'USDT 0.4U',          emoji: '💰', value: 0.4, weight: 50,  type:'usdt'    },
-  { name: 'USDT 0.5U',          emoji: '💰', value: 0.5, weight: 40,  type:'usdt'    },
-  { name: 'USDT 0.6U',          emoji: '💰', value: 0.6, weight: 28,  type:'usdt'    },
-  // ===== 中下档 ~1.2% =====
-  { name: '体验金 2U',           emoji: '🎁', value: 2,   weight: 12,  type:'trial'   },
-  // ===== 极低档（30天内可领到1次）=====
+  // ===== 高概率档 ~72% =====
+  { name: '🧧 私信群主领取红包', emoji: '🧧', value: 0,   weight: 319, type:'hongbao', special: true },
+  { name: 'USDT 0.1U',          emoji: '💰', value: 0.1, weight: 140, type:'usdt'    },
+  { name: 'USDT 0.2U',          emoji: '💰', value: 0.2, weight: 115, type:'usdt'    },
+  { name: 'USDT 0.3U',          emoji: '💰', value: 0.3, weight: 85,  type:'usdt'    },
+  // ===== 中等档 ~16% =====
+  { name: '返佣卡 1张',          emoji: '🃏', value: 1,   weight: 160, type:'rebate'  },
+  // ===== 中高档 ~14.5% =====
+  { name: 'USDT 0.4U',          emoji: '💰', value: 0.4, weight: 60,  type:'usdt'    },
+  { name: 'USDT 0.5U',          emoji: '💰', value: 0.5, weight: 50,  type:'usdt'    },
+  { name: 'USDT 0.6U',          emoji: '💰', value: 0.6, weight: 35,  type:'usdt'    },
+  // ===== 中下档 ~2.5% =====
+  { name: '体验金 2U',           emoji: '🎁', value: 2,   weight: 25,  type:'trial'   },
+  // ===== 极低档 ~0.3% each (30天内可领到1次) =====
   { name: 'USDT 1U',            emoji: '💰', value: 1,   weight: 3,   type:'usdt'    },
   { name: 'USDT 2U',            emoji: '💰', value: 2,   weight: 3,   type:'usdt'    },
-  { name: '体验金 4U',           emoji: '🎁', value: 4,   weight: 1,   type:'trial'   },
-  { name: '返佣卡 2张',          emoji: '🃏', value: 2,   weight: 5,   type:'rebate'  },
+  { name: '体验金 4U',           emoji: '🎁', value: 4,   weight: 2,   type:'trial'   },
+  { name: '返佣卡 2张',          emoji: '🃏', value: 2,   weight: 3,   type:'rebate'  },
 ];
 
 // ===== 工具函数 =====
@@ -698,7 +650,6 @@ function confirmName() {
   document.getElementById('statsBar').style.display = 'flex';
   document.getElementById('calendarWrap').style.display = 'block';
   document.getElementById('hintBanner').style.display = 'block';
-  document.getElementById('rulesSection').style.display = 'block';
   document.getElementById('unlockedList').style.display = 'block';
 
   renderCalendar();
@@ -714,7 +665,6 @@ function changeName() {
   document.getElementById('statsBar').style.display = 'none';
   document.getElementById('calendarWrap').style.display = 'none';
   document.getElementById('hintBanner').style.display = 'none';
-  document.getElementById('rulesSection').style.display = 'none';
   document.getElementById('unlockedList').style.display = 'none';
 }
 
@@ -784,11 +734,18 @@ function nextMonth() {
 function openUnlockModal(day) {
   pendingDate = { year: currentYear, month: currentMonth, day };
   const dateStr = `${currentYear}年${currentMonth}月${day}日`;
-  document.getElementById('modalDesc').innerHTML = `<strong style="color:#ffd700">${dateStr}</strong><br>发当天交易截图给管理员<br>收到4位解锁码后在这里输入`;
+  const today = new Date();
+  const isToday = (today.getFullYear()===currentYear && today.getMonth()+1===currentMonth && today.getDate()===day);
+  const desc = isToday
+    ? `<strong style="color:#ffd700">${dateStr}</strong><br>发今天的交易截图给管理员<br>收到4位解锁码后在这里输入`
+    : `<strong style="color:#ffd700">${dateStr}</strong><br>⏪ 补领历史奖励<br>输入管理员发给你的<strong style="color:#ffd700;">${dateStr}补发解锁码</strong>`;
+  document.getElementById('modalDesc').innerHTML = desc;
   document.getElementById('codeInput').value = '';
   document.getElementById('codeError').style.display = 'none';
   document.getElementById('unlockModal').classList.add('show');
   setTimeout(() => document.getElementById('codeInput').focus(), 100);
+  // 更新解锁按钮文字
+  document.querySelector('#unlockModal .btn-unlock').textContent = isToday ? '确认解锁 🔓' : '补领解锁 🔓';
 }
 
 function closeModal() {
