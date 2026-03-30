@@ -848,6 +848,13 @@ function nextMonth() {
 
 // ===== 解锁逻辑 =====
 function openUnlockModal(day) {
+  // 如果用户还没输入UID，强制先输入
+  if (!currentUser) {
+    alert('⚠️ 请先在页面顶部输入你的 OKX UID，点击「确认」后再领取奖励！');
+    document.getElementById('uidInput') && document.getElementById('uidInput').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
   pendingDate = { year: currentYear, month: currentMonth, day };
   const dateStr = `${currentYear}年${currentMonth}月${day}日`;
   const today = new Date();
